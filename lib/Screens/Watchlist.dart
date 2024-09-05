@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../Widgets/Trading_chart.dart';
 import 'Live_chart.dart';
+
 class Watchlist extends StatefulWidget {
   const Watchlist({super.key});
 
@@ -13,117 +14,24 @@ class Watchlist extends StatefulWidget {
 }
 
 class _WatchlistState extends State<Watchlist> {
-  final TextEditingController _textController = TextEditingController();
-  List<dynamic> stockList = [];
-  List<dynamic> filteredStockList = [];
-  List<dynamic> myList = []; // Add this to keep track of "My list"
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   loadJsonData();
-  //   _textController.addListener(_filterStocks);
-  // }
-
-  @override
-  void dispose() {
-    _textController.removeListener(_filterStocks);
-    _textController.dispose();
-    super.dispose();
-  }
-
-  Future<void> loadJsonData() async {
-    final String response = await rootBundle.loadString('assets/historical_stock_data.json');
-    final data = json.decode(response);
-
-    setState(() {
-      stockList = data.keys.map((key) {
-        final stockData = data[key];
-
-        return {
-          'symbol': stockData['symbol'],
-          'fav': stockData['fav'],
-          'companyName': stockData['company_name'],
-          'sector': stockData['sector'],
-          'latestPrice': stockData['current_price'],
-          'priceChange': stockData['price_change'],
-          'percentageChange': stockData['percentage_change'],
-          'timeFrames': stockData['time_frames'],  // Store the time frames data
-        };
-      }).toList();
-
-      filteredStockList = stockList;
-    });
-  }
-
-
-  void _filterStocks() {
-    final query = _textController.text.toLowerCase();
-    setState(() {
-      filteredStockList = stockList.where((stock) {
-        final companyName = stock['companyName'].toLowerCase();
-        return companyName.contains(query);
-      }).toList();
-    });
-  }
-
-  // bool _toggleWatchlist1(Map<String, dynamic> stock, bool isInWatchlist) {
-  //   setState(() {
-  //     if (isInWatchlist) {
-  //       myList.add(stock);
-  //     } else {
-  //       myList.removeWhere((item) => item['fav'] == stock['_fav']);
-  //     }
-  //   });
-  //   return myList.any((item) => item['symbol'] == stock['symbol']);
-  // }
-
+  List<Map<String, dynamic>> watchlist = [];
 
   @override
   void initState() {
     super.initState();
-    loadJsonData();
-    _textController.addListener(_filterStocks);
-    loadMyList(); // Load the watchlist from SharedPreferences
+    loadWatchlist();
   }
 
-  Future<void> loadMyList() async {
+  Future<void> loadWatchlist() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> myListJson = prefs.getStringList('watchlist') ?? [];
-    setState(() {
-      myList = myListJson.map((jsonItem) => jsonDecode(jsonItem)).toList();
-    });
-  }
-
-
-  Future<void> _toggleWatchlist1(Map<String, dynamic> stock,
-      bool isInWatchlist) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> watchlistJson = prefs.getStringList('watchlist') ?? [];
+    List<String> storedWatchlist = prefs.getStringList('watchlist') ?? [];
 
     setState(() {
-      if (isInWatchlist) {
-        // Remove from watchlist
-        watchlistJson.removeWhere((item) =>
-        jsonDecode(item)['symbol'] == stock['symbol']);
-        myList.removeWhere((item) => item['symbol'] == stock['symbol']);
-      } else {
-        // Check if list is full
-        if (watchlistJson.length >= 2) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('The list is full')),
-          );
-          return;
-        }
-
-        // Add to watchlist
-        String stockJson = jsonEncode(stock);
-        watchlistJson.add(stockJson);
-        myList.add(stock);
-      }
+      watchlist = storedWatchlist
+          .map((item) => json.decode(item))
+          .cast<Map<String, dynamic>>()
+          .toList();
     });
-
-    await prefs.setStringList('watchlist', watchlistJson);
   }
 
   @override
@@ -131,7 +39,6 @@ class _WatchlistState extends State<Watchlist> {
     return Scaffold(
       backgroundColor: const Color(0xffEBFCF8),
       appBar: AppBar(
-
         leadingWidth: 100.w,
         leading: Padding(
           padding: EdgeInsets.only(left: 20.w, top: 20.h),
@@ -139,192 +46,129 @@ class _WatchlistState extends State<Watchlist> {
             'Watchlist',
             style: TextStyle(
               color: const Color(0xFF191919),
-              fontSize: 16.sp,
+              fontSize: 18.sp,
               fontFamily: 'Montserrat',
               fontWeight: FontWeight.w600,
             ),
           ),
         ),
       ),
-      body: _buildExploreTab(),
-    );
-  }
-
-  Widget _buildExploreTab() {
-    return Container(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 10.h),
-                child: Container(
-                  height: 48.h,
-                  width: 330.w,
-                  padding: EdgeInsets.symmetric(vertical: 0.h),
-                  decoration: ShapeDecoration(
-                    color: const Color(0xFFffffff),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15.r),
+      body: watchlist.isEmpty
+          ? const Center(
+        child: Text('No stocks in your list.'),
+      )
+          : Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+        child: ListView.builder(
+          itemCount: watchlist.length,
+          itemBuilder: (context, index) {
+            final stock = watchlist[index];
+            // Fetch historical data from SharedPreferences
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LiveChart(
+                      stock: stock,
+                      onToggleWatchlist: (updatedStock, isAdded) {
+                        setState(() {
+                          if (isAdded) {
+                            watchlist.add(updatedStock);
+                          } else {
+                            watchlist.removeWhere(
+                                    (s) => s['symbol'] == updatedStock['symbol']);
+                          }
+                        });
+                      },
+                      timeFrames: stock['timeFrames'],
+                      isMini: false,
                     ),
                   ),
-                  child: TextField(
-                    onChanged: (value) => _filterStocks(),
-                    keyboardType: TextInputType.text,
-                    textCapitalization: TextCapitalization.words,
-                    textInputAction: TextInputAction.search,
-                    cursorColor: const Color(0xff282828),
-                    controller: _textController,
-                    style: TextStyle(
-                      fontSize: 22.sp,
-                      color: const Color(0xFF191919),
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0.32,
-                    ),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: 'Search',
-                      hintStyle: TextStyle(
-                        color: const Color(0xFF191919),
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.32,
-                      ),
-                      prefixIcon: Padding(
-                        padding: EdgeInsets.only(top: 13.h, bottom: 13),
-                        child: Icon(
-                          Icons.search,
-                          color: Color(0xFF191919),
-                          size: 24.sp,
-                        ),
-                      ),
-                      suffixIcon: _textController.text.isEmpty
-                          ? SizedBox(width: 10.w)
-                          : IconButton(
-                        icon: Icon(
-                          Icons.clear,
-                          color: const Color(0xff282828),
-                          size: 20.w,
-                        ),
-                        onPressed: () {
-                          _textController.clear();
-                          _filterStocks();
-                        },
-                      ),
+                );
+              },
+              child: Container(
+                padding: EdgeInsets.only(top: 10.h,bottom: 2.h),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      width: 0.5,
+                      color: Colors.grey.shade300,
                     ),
                   ),
                 ),
-              ),
-              SizedBox(
-                height: 64.0 * filteredStockList.length,
-                child: ListView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: filteredStockList.length,
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 20.w, vertical: 0.h),
-                  itemBuilder: (BuildContext context, int index) {
-                    final stock = filteredStockList[index];
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                LiveChart(
-                                  stock: stock,
-                                  timeFrames: stock['timeFrames'],  // Pass the timeFrames data
-                                  onToggleWatchlist: _toggleWatchlist1, isMini: false,  // Pass the callback
-                                ),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        width: 390.w,
-                        height: 64.h,
-                        child: Column(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      stock['symbol'],
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w400,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                    SizedBox(width: 10.w),
+                    SizedBox(
+                      width: 90.w,
+                      height: 35.h,
+                      child: TradingChart1(
+                        historicalData: stock['timeFrames'] != null
+                            ? stock['timeFrames'].values.first // Adjust based on the structure
+                            : [],  // Provide default or empty data
+                        isMini: true,
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 6.h),
+                        Row(
                           children: [
-                            Padding(
-                              padding:
-                              EdgeInsets.symmetric(vertical: 10.h),
-                              child: Row(
-                                mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      SizedBox(
-                                        width: 260.w,
-                                        child: Text(
-                                          stock['companyName'] ?? 'N/A',
-                                          style: TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 14.sp,
-                                            fontWeight: FontWeight.w400,
-                                            fontFamily: 'Montserrat',
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                            Column(
+                              children: [
+                                Text(
+                                  '₹ ${stock['latestPrice'].toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    color: const Color(0xFF191919),
+                                    fontWeight: FontWeight.w500,
                                   ),
-                                  Column(
-                                    crossAxisAlignment:
-                                    CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        '₹ ${stock['latestPrice']
-                                            .toStringAsFixed(2)}',
-                                        style: TextStyle(
-                                          color: Color(0xFF191919),
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      '${stock['priceChange'] >= 0 ? '+' : ''}${stock['priceChange'].toStringAsFixed(2)}',
+                                      style: TextStyle(
+                                        color: stock['priceChange'] >= 0
+                                            ? const Color(0xFF04F565)
+                                            : Colors.red,
                                       ),
-                                      SizedBox(
-                                        height: 6.h,
+                                    ),
+                                    Text(
+                                      ' (${stock['percentageChange'].toStringAsFixed(2)}%)',
+                                      style: TextStyle(
+                                        color: stock['percentageChange'] >= 0
+                                            ? const Color(0xFF04F565)
+                                            : Colors.red,
                                       ),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            '${stock['priceChange']>= 0 ? '+' : ''}${stock['priceChange']
-                                                .toStringAsFixed(2)}',
-                                            style: TextStyle(
-                                              color:
-                                              stock['priceChange']  >= 0 ? const Color(0xFF04F565)
-                                                  : Colors.red,
-                                            ),
-                                          ),
-                                          Text(
-                                            ' (${stock['percentageChange']
-                                                .toStringAsFixed(2)}%)',
-                                            style: TextStyle(
-                                              color:
-                                              stock['percentageChange']  >= 0 ?  Color(0xFF04F565)
-                                                  : Colors.red,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Divider(
-                              thickness: 0.06,
-                              color: Colors.black,
-                              height: 1.h,
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ),
-                    );
-                  },
+                        SizedBox(height: 8.h),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(
-                height: 30.h,
-              )
-            ],
-          ),
-        )
+            );
+          },
+        ),
+      ),
     );
   }
 }
