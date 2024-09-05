@@ -1,0 +1,16 @@
+{
+  "stocks": [
+    {
+      "symbol": "AAPL",
+      "price": 150.23,
+      "change": 1.45,
+      "percentageChange": 0.97
+    },
+    {
+      "symbol": "GOOGL",
+      "price": 2803.42,
+      "change": -12.33,
+      "percentageChange": -0.44
+    }
+  ]
+}
