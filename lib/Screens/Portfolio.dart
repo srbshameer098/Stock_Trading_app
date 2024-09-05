@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 class Portfolio extends StatefulWidget {
   const Portfolio({super.key});
 
@@ -10,7 +11,7 @@ class Portfolio extends StatefulWidget {
 class _PortfolioState extends State<Portfolio> {
   @override
   Widget build(BuildContext context) {
-    return  Scaffold(
+    return Scaffold(
       backgroundColor: Color(0xffEBFCF8),
       appBar: AppBar(
         leadingWidth: 100.w,
@@ -27,15 +28,19 @@ class _PortfolioState extends State<Portfolio> {
           ),
         ),
       ),
-      body: Column(mainAxisAlignment: MainAxisAlignment.center,
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Center(child: Text('Coming Soon........',
+          Center(
+              child: Text(
+            'Coming Soon........',
             style: TextStyle(
-            color: Colors.black,
-            fontSize: 24.sp,
-            fontWeight: FontWeight.w400,
-            fontFamily: 'Montserrat',
-          ),))
+              color: Colors.black,
+              fontSize: 24.sp,
+              fontWeight: FontWeight.w400,
+              fontFamily: 'Montserrat',
+            ),
+          ))
         ],
       ),
     );

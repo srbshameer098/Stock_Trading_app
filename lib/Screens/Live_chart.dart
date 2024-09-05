@@ -4,26 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../Widgets/Trading_chart.dart'; // Custom widget for stock chart
+import '../Widgets/Trading_chart.dart';
 
 bool button = false;
 
 class LiveChart extends StatefulWidget {
-  final Map<String, dynamic> stock;  // Stock data passed to the page
+  final Map<String, dynamic> stock;
   final Function(Map<String, dynamic>, bool) onToggleWatchlist;
-  final   Map<String, dynamic> timeFrames ;
-
-
-
+  final Map<String, dynamic> timeFrames;
 
   // Callback for updating the watchlist
 
-   LiveChart({
+  LiveChart({
     super.key,
     required this.stock,
     required this.onToggleWatchlist,
-     required this.timeFrames,
-     required bool isMini,
+    required this.timeFrames,
+    required bool isMini,
   });
 
   @override
@@ -40,6 +37,7 @@ class _LiveChartState extends State<LiveChart> {
     loadJsonData();
 
     // Fetch the initial state of the button (whether the stock is in the watchlist)
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       List<String> watchlist = prefs.getStringList('watchlist') ?? [];
@@ -54,7 +52,8 @@ class _LiveChartState extends State<LiveChart> {
 
   Future<void> loadJsonData() async {
     // Load stock data from local assets (mocked data for now)
-    final String response = await rootBundle.loadString('assets/historical_stock_data.json');
+    final String response =
+        await rootBundle.loadString('assets/historical_stock_data.json');
     final data = await json.decode(response);
     setState(() {
       historicalData = data;
@@ -81,7 +80,8 @@ class _LiveChartState extends State<LiveChart> {
         watchlist.add(json.encode(stockData));
 
         // Store historical data
-        await prefs.setString('historicalData_${stockData['symbol']}', json.encode(historicalData![stockData['symbol']]));
+        await prefs.setString('historicalData_${stockData['symbol']}',
+            json.encode(historicalData![stockData['symbol']]));
       } else {
         // If the watchlist is full, show a notification
         ScaffoldMessenger.of(context).showSnackBar(
@@ -98,15 +98,14 @@ class _LiveChartState extends State<LiveChart> {
     });
   }
 
-
   // Filter data based on the selected time frame
   List<Map<String, dynamic>> getFilteredData() {
-    final data = historicalData![widget.stock['symbol']]['time_frames'][selectedTimeFrame] as List<dynamic>;
+    final data = historicalData![widget.stock['symbol']]['time_frames']
+        [selectedTimeFrame] as List<dynamic>;
 
     // Limit the data to the last 100 points for better performance
     return data.cast<Map<String, dynamic>>().take(100).toList();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +119,8 @@ class _LiveChartState extends State<LiveChart> {
     }
 
     double latestPrice = data.last['price'];
-    double previousPrice = data.length > 1 ? data[data.length - 2]['price'] : latestPrice;
+    double previousPrice =
+        data.length > 1 ? data[data.length - 2]['price'] : latestPrice;
     double priceChange = latestPrice - previousPrice;
     double percentageChange = (priceChange / previousPrice) * 100;
 
@@ -186,14 +186,17 @@ class _LiveChartState extends State<LiveChart> {
                 Text(
                   '${priceChange >= 0 ? '+' : ''}${priceChange.toStringAsFixed(2)}',
                   style: TextStyle(
-                    color: priceChange >= 0 ? const Color(0xFF04F565) : Colors.red,
+                    color:
+                        priceChange >= 0 ? const Color(0xFF04F565) : Colors.red,
                     fontSize: 16.sp,
                   ),
                 ),
                 Text(
                   ' (${percentageChange.toStringAsFixed(2)}%)',
                   style: TextStyle(
-                    color: percentageChange >= 0 ? const Color(0xFF04F565) : Colors.red,
+                    color: percentageChange >= 0
+                        ? const Color(0xFF04F565)
+                        : Colors.red,
                     fontSize: 16.sp,
                   ),
                 ),
@@ -225,8 +228,9 @@ class _LiveChartState extends State<LiveChart> {
               child: SizedBox(
                 width: 380.w,
                 height: 350.h,
-                child: TradingChart(historicalData: data,
-                   isMini: false,
+                child: TradingChart(
+                  historicalData: data,
+                  isMini: false,
                 ), // Trading chart widget
               ),
             ),
@@ -252,12 +256,16 @@ class _LiveChartState extends State<LiveChart> {
                       borderRadius: BorderRadius.circular(20.r),
                     ),
                   ),
-                  child: TextButton(style: const ButtonStyle(),
+                  child: TextButton(
+                    style: const ButtonStyle(),
                     onPressed: () => setState(() => selectedTimeFrame = '1d'),
-                    child:  Text('1 D',style: TextStyle(
-                      color: const Color(0xFF191919),
-                      fontSize: 16.sp,
-                    ),),
+                    child: Text(
+                      '1 D',
+                      style: TextStyle(
+                        color: const Color(0xFF191919),
+                        fontSize: 16.sp,
+                      ),
+                    ),
                   ),
                 ),
                 Container(
@@ -273,10 +281,13 @@ class _LiveChartState extends State<LiveChart> {
                   ),
                   child: TextButton(
                     onPressed: () => setState(() => selectedTimeFrame = '1w'),
-                    child:  Text('1 W',style: TextStyle(
-                      color: const Color(0xFF191919),
-                      fontSize: 16.sp,
-                    ),),
+                    child: Text(
+                      '1 W',
+                      style: TextStyle(
+                        color: const Color(0xFF191919),
+                        fontSize: 16.sp,
+                      ),
+                    ),
                   ),
                 ),
                 Container(
@@ -292,13 +303,18 @@ class _LiveChartState extends State<LiveChart> {
                   ),
                   child: TextButton(
                     onPressed: () => setState(() => selectedTimeFrame = '1m'),
-                    child:  Text('1 M',style: TextStyle(
-                      color: Color(0xFF191919),
-                      fontSize: 16.sp,
-                    ),),
+                    child: Text(
+                      '1 M',
+                      style: TextStyle(
+                        color: Color(0xFF191919),
+                        fontSize: 16.sp,
+                      ),
+                    ),
                   ),
                 ),
-                SizedBox(width: 50.w,)
+                SizedBox(
+                  width: 50.w,
+                )
               ],
             ),
           ],

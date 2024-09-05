@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_exception.dart';
 
-class   ApiClient {
+class ApiClient {
   Future<Response> invokeAPI(String path, String method, Object? body) async {
     Map<String, String> headerParams = {};
     Response response;
@@ -14,16 +14,15 @@ class   ApiClient {
     print(url);
 
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    String accessToken= prefs.getString("accessToken").toString();
+    String accessToken = prefs.getString("accessToken").toString();
     final nullableHeaderParams = (headerParams.isEmpty) ? null : headerParams;
     print(body);
     switch (method) {
       case "POST":
         response = await post(Uri.parse(url),
             headers: {
-
               'content-Type': 'application/json',
-              "token":'Bearer $accessToken'
+              "token": 'Bearer $accessToken'
             },
             body: body);
 
@@ -36,7 +35,8 @@ class   ApiClient {
             body: body);
         break;
       case "DELETE":
-        response = await delete(Uri.parse(url), headers: {"token":'Bearer $accessToken'}, body: body);
+        response = await delete(Uri.parse(url),
+            headers: {"token": 'Bearer $accessToken'}, body: body);
         break;
       case "POST_":
         response = await post(
@@ -56,7 +56,7 @@ class   ApiClient {
         response = await get(
           Uri.parse(url),
           headers: {
-            "token":'Bearer $accessToken',
+            "token": 'Bearer $accessToken',
             'content-Type': 'application/json',
           },
         );

@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'Live_chart.dart';
+
 class Stocklist extends StatefulWidget {
   const Stocklist({super.key});
 
@@ -18,13 +19,6 @@ class _StocklistState extends State<Stocklist> {
   List<dynamic> filteredStockList = [];
   List<dynamic> myList = []; // Add this to keep track of "My list"
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   loadJsonData();
-  //   _textController.addListener(_filterStocks);
-  // }
-
   @override
   void dispose() {
     _textController.removeListener(_filterStocks);
@@ -33,13 +27,14 @@ class _StocklistState extends State<Stocklist> {
   }
 
   Future<void> loadJsonData() async {
-    final String response = await rootBundle.loadString('assets/historical_stock_data.json');
+    final String response =
+        await rootBundle.loadString('assets/historical_stock_data.json');
     final data = json.decode(response);
 
     setState(() {
       stockList = data.keys.map((key) {
         final stockData = data[key];
-
+          // Store the time frames data
         return {
           'symbol': stockData['symbol'],
           'fav': stockData['fav'],
@@ -48,14 +43,13 @@ class _StocklistState extends State<Stocklist> {
           'latestPrice': stockData['current_price'],
           'priceChange': stockData['price_change'],
           'percentageChange': stockData['percentage_change'],
-          'timeFrames': stockData['time_frames'],  // Store the time frames data
+          'timeFrames': stockData['time_frames'],
         };
       }).toList();
 
       filteredStockList = stockList;
     });
   }
-
 
   void _filterStocks() {
     final query = _textController.text.toLowerCase();
@@ -66,18 +60,6 @@ class _StocklistState extends State<Stocklist> {
       }).toList();
     });
   }
-
-  // bool _toggleWatchlist1(Map<String, dynamic> stock, bool isInWatchlist) {
-  //   setState(() {
-  //     if (isInWatchlist) {
-  //       myList.add(stock);
-  //     } else {
-  //       myList.removeWhere((item) => item['fav'] == stock['_fav']);
-  //     }
-  //   });
-  //   return myList.any((item) => item['symbol'] == stock['symbol']);
-  // }
-
 
   @override
   void initState() {
@@ -95,17 +77,16 @@ class _StocklistState extends State<Stocklist> {
     });
   }
 
-
-  Future<void> _toggleWatchlist1(Map<String, dynamic> stock,
-      bool isInWatchlist) async {
+  Future<void> _toggleWatchlist1(
+      Map<String, dynamic> stock, bool isInWatchlist) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> watchlistJson = prefs.getStringList('watchlist') ?? [];
 
     setState(() {
       if (isInWatchlist) {
         // Remove from watchlist
-        watchlistJson.removeWhere((item) =>
-        jsonDecode(item)['symbol'] == stock['symbol']);
+        watchlistJson.removeWhere(
+            (item) => jsonDecode(item)['symbol'] == stock['symbol']);
         myList.removeWhere((item) => item['symbol'] == stock['symbol']);
       } else {
         // Check if list is full
@@ -131,7 +112,6 @@ class _StocklistState extends State<Stocklist> {
     return Scaffold(
       backgroundColor: const Color(0xffEBFCF8),
       appBar: AppBar(
-
         leadingWidth: 100.w,
         leading: Padding(
           padding: EdgeInsets.only(left: 20.w, top: 20.h),
@@ -153,178 +133,171 @@ class _StocklistState extends State<Stocklist> {
   Widget _buildExploreTab() {
     return Container(
         child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 10.h),
-                child: Container(
-                  height: 48.h,
-                  width: 330.w,
-                  padding: EdgeInsets.symmetric(vertical: 0.h),
-                  decoration: ShapeDecoration(
-                    color: const Color(0xFFffffff),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15.r),
-                    ),
-                  ),
-                  child: TextField(
-                    onChanged: (value) => _filterStocks(),
-                    keyboardType: TextInputType.text,
-                    textCapitalization: TextCapitalization.words,
-                    textInputAction: TextInputAction.search,
-                    cursorColor: const Color(0xff282828),
-                    controller: _textController,
-                    style: TextStyle(
-                      fontSize: 22.sp,
-                      color: const Color(0xFF191919),
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0.32,
-                    ),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: 'Search',
-                      hintStyle: TextStyle(
-                        color: const Color(0xFF191919),
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.32,
-                      ),
-                      prefixIcon: Padding(
-                        padding: EdgeInsets.only(top: 13.h, bottom: 13),
-                        child: Icon(
-                          Icons.search,
-                          color: Color(0xFF191919),
-                          size: 24.sp,
-                        ),
-                      ),
-                      suffixIcon: _textController.text.isEmpty
-                          ? SizedBox(width: 10.w)
-                          : IconButton(
-                        icon: Icon(
-                          Icons.clear,
-                          color: const Color(0xff282828),
-                          size: 20.w,
-                        ),
-                        onPressed: () {
-                          _textController.clear();
-                          _filterStocks();
-                        },
-                      ),
-                    ),
-                  ),
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 10.h),
+            child: Container(
+              height: 48.h,
+              width: 330.w,
+              padding: EdgeInsets.symmetric(vertical: 0.h),
+              decoration: ShapeDecoration(
+                color: const Color(0xFFffffff),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.r),
                 ),
               ),
-              SizedBox(
-                height: 64.0 * filteredStockList.length,
-                child: ListView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: filteredStockList.length,
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 20.w, vertical: 0.h),
-                  itemBuilder: (BuildContext context, int index) {
-                    final stock = filteredStockList[index];
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                LiveChart(
-                                  stock: stock,
-                                  timeFrames: stock['timeFrames'],  // Pass the timeFrames data
-                                  onToggleWatchlist: _toggleWatchlist1, isMini: false,  // Pass the callback
-                                ),
+              child: TextField(
+                onChanged: (value) => _filterStocks(),
+                keyboardType: TextInputType.text,
+                textCapitalization: TextCapitalization.words,
+                textInputAction: TextInputAction.search,
+                cursorColor: const Color(0xff282828),
+                controller: _textController,
+                style: TextStyle(
+                  fontSize: 22.sp,
+                  color: const Color(0xFF191919),
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0.32,
+                ),
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  hintText: 'Search',
+                  hintStyle: TextStyle(
+                    color: const Color(0xFF191919),
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.32,
+                  ),
+                  prefixIcon: Padding(
+                    padding: EdgeInsets.only(top: 13.h, bottom: 13),
+                    child: Icon(
+                      Icons.search,
+                      color: Color(0xFF191919),
+                      size: 24.sp,
+                    ),
+                  ),
+                  suffixIcon: _textController.text.isEmpty
+                      ? SizedBox(width: 10.w)
+                      : IconButton(
+                          icon: Icon(
+                            Icons.clear,
+                            color: const Color(0xff282828),
+                            size: 20.w,
                           ),
-                        );
-                      },
-                      child: Container(
-                        width: 390.w,
-                        height: 64.h,
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding:
-                              EdgeInsets.symmetric(vertical: 10.h),
-                              child: Row(
-                                mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                          onPressed: () {
+                            _textController.clear();
+                            _filterStocks();
+                          },
+                        ),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 64.0 * filteredStockList.length,
+            child: ListView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: filteredStockList.length,
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 0.h),
+              itemBuilder: (BuildContext context, int index) {
+                final stock = filteredStockList[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => LiveChart(
+                          stock: stock,
+                          timeFrames: stock['timeFrames'],
+                          // Pass the timeFrames data
+                          onToggleWatchlist: _toggleWatchlist1,
+                          isMini: false, // Pass the callback
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: 390.w,
+                    height: 64.h,
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.symmetric(vertical: 10.h),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
                                 children: [
+                                  SizedBox(
+                                    width: 260.w,
+                                    child: Text(
+                                      stock['companyName'] ?? 'N/A',
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w400,
+                                        fontFamily: 'Montserrat',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '₹ ${stock['latestPrice'].toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      color: Color(0xFF191919),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 6.h,
+                                  ),
                                   Row(
                                     children: [
-                                      SizedBox(
-                                        width: 260.w,
-                                        child: Text(
-                                          stock['companyName'] ?? 'N/A',
-                                          style: TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 14.sp,
-                                            fontWeight: FontWeight.w400,
-                                            fontFamily: 'Montserrat',
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Column(
-                                    crossAxisAlignment:
-                                    CrossAxisAlignment.end,
-                                    children: [
                                       Text(
-                                        '₹ ${stock['latestPrice']
-                                            .toStringAsFixed(2)}',
+                                        '${stock['priceChange'] >= 0 ? '+' : ''}${stock['priceChange'].toStringAsFixed(2)}',
                                         style: TextStyle(
-                                          color: Color(0xFF191919),
-                                          fontWeight: FontWeight.w500,
+                                          color: stock['priceChange'] >= 0
+                                              ? const Color(0xFF04F565)
+                                              : Colors.red,
                                         ),
                                       ),
-                                      SizedBox(
-                                        height: 6.h,
-                                      ),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            '${stock['priceChange']>= 0 ? '+' : ''}${stock['priceChange']
-                                                .toStringAsFixed(2)}',
-                                            style: TextStyle(
-                                              color:
-                                              stock['priceChange']  >= 0 ? const Color(0xFF04F565)
-                                                  : Colors.red,
-                                            ),
-                                          ),
-                                          Text(
-                                            ' (${stock['percentageChange']
-                                                .toStringAsFixed(2)}%)',
-                                            style: TextStyle(
-                                              color:
-                                              stock['percentageChange']  >= 0 ?  Color(0xFF04F565)
-                                                  : Colors.red,
-                                            ),
-                                          ),
-                                        ],
+                                      Text(
+                                        ' (${stock['percentageChange'].toStringAsFixed(2)}%)',
+                                        style: TextStyle(
+                                          color: stock['percentageChange'] >= 0
+                                              ? Color(0xFF04F565)
+                                              : Colors.red,
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ],
                               ),
-                            ),
-                            Divider(
-                              thickness: 0.06,
-                              color: Colors.black,
-                              height: 1.h,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              SizedBox(
-                height: 30.h,
-              )
-            ],
+                        Divider(
+                          thickness: 0.06,
+                          color: Colors.black,
+                          height: 1.h,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
-        )
-    );
+          SizedBox(
+            height: 30.h,
+          )
+        ],
+      ),
+    ));
   }
 }
